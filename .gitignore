@@ -1,0 +1,8 @@
+# personal data created while using AI Tutor
+config.json
+logs/
+memory/
+
+# Python
+__pycache__/
+*.pyc
