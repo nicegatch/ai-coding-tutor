@@ -51,7 +51,7 @@ Setup takes care of everything:
 | No NVIDIA card, 10 GB of RAM or more | Qwen2.5-Coder 7B (on the processor) | 4.7 GB | slower, same accuracy |
 | No NVIDIA card, less than 10 GB of RAM | Qwen2.5-Coder 3B (on the processor) | 1.9 GB | slower |
 
-**Needs:** Windows 10 or 11 (64-bit), about 8 GB of free disk space, and internet during setup.
+**Needs:** Windows 10 or 11 (64-bit), about 15 GB of free disk space (Ollama about 5 GB, plus the model), and internet during setup.
 
 ---
 

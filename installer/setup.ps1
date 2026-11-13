@@ -126,7 +126,7 @@ if ($Ollama) {
     Ok "Found: $Ollama"
 } else {
     $installer = Join-Path $env:TEMP 'OllamaSetup.exe'
-    Download $OllamaUrl $installer "Ollama (about 1 GB, please wait)"
+    Download $OllamaUrl $installer "Ollama (about 1.9 GB, please wait)"
     Info "Installing Ollama ..."
     $p = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-')
     Remove-Item $installer -Force -ErrorAction SilentlyContinue
