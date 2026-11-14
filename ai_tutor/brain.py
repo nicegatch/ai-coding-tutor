@@ -19,6 +19,13 @@ from . import winio
 
 NO_WINDOW = 0x08000000  # CREATE_NO_WINDOW
 
+
+def hidden_startupinfo():
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = 0  # SW_HIDE
+    return si
+
 # --------------------------------------------------------------------------- hardware
 
 
@@ -29,7 +36,8 @@ def detect_hardware():
     smi = shutil.which("nvidia-smi") or r"C:\Windows\System32\nvidia-smi.exe"
     try:
         out = subprocess.run([smi, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
-                             capture_output=True, text=True, timeout=10, creationflags=NO_WINDOW)
+                             capture_output=True, text=True, timeout=10, creationflags=NO_WINDOW,
+                             startupinfo=hidden_startupinfo(), stdin=subprocess.DEVNULL)
         best = None
         for line in out.stdout.strip().splitlines():
             name, mem = [x.strip() for x in line.rsplit(",", 1)]
@@ -123,8 +131,11 @@ class Ollama:
         if not os.path.exists(exe):
             raise RuntimeError("Ollama is not installed. Run setup.bat first.")
         self.log(f"starting ollama server: {exe}")
-        subprocess.Popen([exe, "serve"], creationflags=NO_WINDOW | 0x00000008,  # DETACHED_PROCESS
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Give the server a hidden console. Its helper processes (llama-server,
+        # GPU discovery runners, ...) inherit that hidden console. With no console
+        # at all (DETACHED_PROCESS), each helper would pop up its own cmd window.
+        subprocess.Popen([exe, "serve"], creationflags=NO_WINDOW, startupinfo=hidden_startupinfo(),
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         end = time.time() + wait
         while time.time() < end:
             if self.alive():
@@ -411,7 +422,8 @@ _IMPORTANT_C_WARNINGS = ("implicit declaration", "format", "uninitialized", "con
 
 def _run(cmd, cwd=None, timeout=30):
     p = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, timeout=timeout,
-                       creationflags=NO_WINDOW, errors="replace")
+                       creationflags=NO_WINDOW, startupinfo=hidden_startupinfo(),
+                       stdin=subprocess.DEVNULL, errors="replace")
     return p.returncode, (p.stdout + p.stderr)
 
 
