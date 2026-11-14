@@ -109,8 +109,9 @@ if ($Python) {
     $installer = Join-Path $env:TEMP "python-$PyVersion-amd64.exe"
     Download $PyUrl $installer "Python $PyVersion (about 25 MB)"
     Info "Installing Python (just for you, no admin needed) ..."
-    $p = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @(
+    $p = Start-Process -FilePath $installer -PassThru -ArgumentList @(
         '/quiet', 'InstallAllUsers=0', 'PrependPath=1', 'Include_launcher=1', 'Include_test=0', 'Include_doc=0', 'Include_tcltk=1', 'Shortcuts=0')
+    $p.WaitForExit()
     Remove-Item $installer -Force -ErrorAction SilentlyContinue
     $Python = Find-Python
     if (-not $Python) { Fail "Python could not be installed (installer exit code $($p.ExitCode))." }
@@ -128,7 +129,17 @@ if ($Ollama) {
     $installer = Join-Path $env:TEMP 'OllamaSetup.exe'
     Download $OllamaUrl $installer "Ollama (about 1.9 GB, please wait)"
     Info "Installing Ollama ..."
-    $p = Start-Process -FilePath $installer -Wait -PassThru -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-')
+    # Wait for the installer itself only. (Start-Process -Wait would also wait for the
+    # Ollama app the installer opens at the end, so setup would hang until it is closed.)
+    $p = Start-Process -FilePath $installer -PassThru -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-')
+    $p.WaitForExit()
+    # Close the 'Welcome to Ollama' window it opens; AI Tutor runs Ollama hidden by itself.
+    for ($i = 0; $i -lt 20; $i++) {
+        $app = Get-Process -Name 'ollama app', 'Ollama' -ErrorAction SilentlyContinue
+        if ($app) { Start-Sleep -Seconds 1; $app | Stop-Process -Force -ErrorAction SilentlyContinue; break }
+        Start-Sleep -Milliseconds 500
+    }
+    Get-Process -Name 'ollama' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Remove-Item $installer -Force -ErrorAction SilentlyContinue
     $Ollama = Find-Ollama
     if (-not $Ollama) {
